@@ -30,11 +30,11 @@ export async function DELETE(
   { params }: { params: { billboardId: string, storeId: string } }
 ) {
   try {
-    const { userId } = auth();
+    // const { userId } = auth();
 
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 403 });
-    }
+    // if (!userId) {
+    //   return new NextResponse("Unauthenticated", { status: 403 });
+    // }
 
     if (!params.billboardId) {
       return new NextResponse("Billboard id is required", { status: 400 });
@@ -43,7 +43,7 @@ export async function DELETE(
     const storeByUserId = await prismadb.store.findFirst({
       where: {
         id: params.storeId,
-        userId,
+        // userId,
       }
     });
 
@@ -70,15 +70,15 @@ export async function PATCH(
   { params }: { params: { billboardId: string, storeId: string } }
 ) {
   try {
-    const { userId } = auth();
+    // const { userId } = auth();
 
     const body = await req.json();
 
     const { label, imageUrl } = body;
 
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 403 });
-    }
+    // if (!userId) {
+    //   return new NextResponse("Unauthenticated", { status: 403 });
+    // }
 
     if (!label) {
       return new NextResponse("Label is required", { status: 400 });
@@ -95,7 +95,7 @@ export async function PATCH(
     const storeByUserId = await prismadb.store.findFirst({
       where: {
         id: params.storeId,
-        userId,
+        // userId,
       }
     });
 

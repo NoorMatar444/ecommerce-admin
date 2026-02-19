@@ -1,19 +1,26 @@
 import { redirect } from "next/navigation";
-
+import { getServerSession } from "next-auth"; // استيراد ضروري
+import { authOptions } from "@/lib/auth";     // استيراد إعدادات المصادقة
 
 import prismadb from "@/lib/prismadb";
-
 import { SettingsForm } from "./components/settings-form";
 
-const SettingsPage = async ({
-  params
-}: {
-  params: { storeId: string }
-}) => {
-  const { userId } = auth();
+interface SettingsPageProps {
+  params: {
+    storeId: string;
+  }
+};
 
+const SettingsPage: React.FC<SettingsPageProps> = async ({
+  params
+}) => {
+  // ✅ 1. استخدام الطريقة الصحيحة لجلب المستخدم في NextAuth
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+
+  // ✅ 2. التحقق من وجود المستخدم
   if (!userId) {
-    redirect('/sign-in');
+    redirect('/api/auth/signin'); // توجيه لصفحة دخول NextAuth
   }
 
   const store = await prismadb.store.findFirst({

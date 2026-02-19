@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-
-
+import { getServerSession } from "next-auth"; // أضف هذا
+import { authOptions } from "@/lib/auth";     // أضف هذا
 import prismadb from "@/lib/prismadb";
-
 
 export async function PATCH(
   req: Request,
   { params }: { params: { storeId: string } }
 ) {
   try {
-    const { userId } = auth();
-    const body = await req.json();
+    // ✅ الطريقة الصحيحة لجلب الـ userId في NextAuth
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
 
+    const body = await req.json();
     const { name } = body;
 
     if (!userId) {
@@ -43,13 +44,14 @@ export async function PATCH(
   }
 };
 
-
 export async function DELETE(
   req: Request,
   { params }: { params: { storeId: string } }
 ) {
   try {
-    const { userId } = auth();
+    // ✅ الطريقة الصحيحة لجلب الـ userId في NextAuth
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
 
     if (!userId) {
       return new NextResponse("Unauthenticated", { status: 403 });

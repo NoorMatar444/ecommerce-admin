@@ -1,28 +1,93 @@
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
-  relationMode = "prisma"
   directUrl    = env("DIRECT_URL")
+  relationMode = "prisma"
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// ---------------------------------------------------------
+// NextAuth Models (النماذج الجديدة الخاصة بتسجيل الدخول)
+// ---------------------------------------------------------
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // العلاقة مع متاجرك (تمت إضافتها هنا)
+  stores        Store[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------
+// E-commerce Models (نماذج المتجر الخاصة بك)
+// ---------------------------------------------------------
+
 model Store {
   id         String      @id @default(uuid())
   name       String
+  
+  // تم التعديل: ربط المتجر بالمستخدم الحقيقي
   userId     String
-  billboards Billboard[] @relation("StoreToBillboard")
-  email      Emails[]    @relation("StoreToEmails")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  categories Category[] @relation("StoreToCategory")
-  products   Product[]  @relation("StoreToProduct")
-  colors     Color[]    @relation("StoreToColor")
-  orders     Order[]    @relation("StoreToOrder")
-  orderCods  OrderCod[] @relation("StoreToOrderCod")
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  billboards Billboard[] @relation("StoreToBillboard")
+  categories Category[]  @relation("StoreToCategory")
+  products   Product[]   @relation("StoreToProduct")
+  colors     Color[]     @relation("StoreToColor")
+  orders     Order[]     @relation("StoreToOrder")
+  orderCods  OrderCod[]  @relation("StoreToOrderCod")
+  email      Emails[]    @relation("StoreToEmails")
+  
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([userId]) // مهم جداً للأداء مع relationMode = "prisma"
 }
 
 model Billboard {
@@ -54,25 +119,27 @@ model Category {
 }
 
 model Product {
-  id         String   @id @default(uuid())
-  storeId    String
-  store      Store    @relation("StoreToProduct", fields: [storeId], references: [id])
-  categoryId String
-  category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  name       String
+  id           String      @id @default(uuid())
+  storeId      String
+  store        Store       @relation("StoreToProduct", fields: [storeId], references: [id])
+  categoryId   String
+  category     Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  name         String
+  priceEGP     Decimal
+  priceAED     Decimal
+  isFeatured   Boolean     @default(false) // تأكد من وجود هذا الحقل إذا كنت تستخدمه في الواجهة
+  isArchived   Boolean     @default(false)
+  quantity     Int         @default(1)
+  isBestSeller Boolean     @default(false)
+  isPromo      Boolean     @default(false)
+  
+  colorId      String
+  color        Color       @relation(fields: [colorId], references: [id])
+  images       Image[]
+  orderItems   OrderItem[]
 
-  colorId    String
-  color      Color       @relation(fields: [colorId], references: [id])
-  images     Image[]
-  orderItems OrderItem[]
-  priceEGP   Decimal
-  priceAED   Decimal
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  quantity     Int      @default(1)
-  isBestSeller Boolean  @default(false)
-  isPromo      Boolean  @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([storeId])
   @@index([categoryId])
@@ -88,10 +155,10 @@ model Color {
   stock      Int       @default(1)
   stockAED   Int       @default(1)
   products   Product[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
   isFeatured Boolean   @default(false)
   isArchived Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([storeId])
 }
@@ -104,9 +171,9 @@ model Order {
   isPaid     Boolean     @default(false)
   phone      String      @default("")
   address    String      @default("")
+  quantity   Int         @default(1)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  quantity   Int         @default(1)
 
   @@index([storeId])
 }
@@ -135,9 +202,9 @@ model OrderCod {
   notes              String      @default("")
   quantity           Int         @default(1)
   discountPercentage Int         @default(1)
+  instaPay           Boolean     @default(false)
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
-  instaPay           Boolean     @default(false)
 
   @@index([storeId])
 }
@@ -162,9 +229,9 @@ model Image {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
+  position  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  position  Int      @default(0)
 
   @@index([productId])
 }

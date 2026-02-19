@@ -8,11 +8,11 @@ export async function DELETE(
     { params }: { params: { orderCodId: string, storeId: string } }
   ) {
     try {
-      const { userId } = auth();
+      // const { userId } = auth();
 
-      if (!userId) {
-        return new NextResponse("Unauthenticated", { status: 403 });
-      }
+      // if (!userId) {
+      //   return new NextResponse("Unauthenticated", { status: 403 });
+      // }
 
       if (!params.orderCodId) {
         return new NextResponse("OrderCod id is required", { status: 400 });
@@ -21,7 +21,7 @@ export async function DELETE(
       const storeByUserId = await prismadb.store.findFirst({
         where: {
           id: params.storeId,
-          userId,
+          // userId,
         }
       });
 
