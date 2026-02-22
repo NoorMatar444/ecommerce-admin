@@ -3,9 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prismadb from "@/lib/prismadb";
 
+// هذا السطر هو السحر الذي سيمنع Vercel من تشغيل الملف أثناء البناء
+export const dynamic = "force-dynamic";
+
 export async function GET(
   req: Request,
-  { params }: { params: { billboardId: string } }
+  { params }: { params: { storeId: string, billboardId: string } }
 ) {
   try {
     if (!params.billboardId) {
