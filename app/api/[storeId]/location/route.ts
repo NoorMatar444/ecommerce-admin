@@ -1,13 +1,27 @@
-import { Request, Response } from 'express';
-import axios from 'axios';
+import { NextResponse } from "next/server";
+import axios from "axios";
 
-export default async function getCountry(req: Request, res: Response) {
+
+
+export async function GET(
+  req: Request,
+  { params }: { params: { storeId: string } }
+) {
   try {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+   
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(',')[0] : "8.8.8.8"; 
+
+    
     const response = await axios.get(`https://ipinfo.io/${ip}/json?token=YOUR_API_TOKEN`);
-    res.json({ country: response.data.country });
+
+    return NextResponse.json({ 
+      country: response.data.country,
+      city: response.data.city 
+    });
+
   } catch (error) {
-    console.error('Error fetching user country:', error);
-    res.status(500).json({ error: 'Unable to fetch country' });
+    console.error('[LOCATION_GET]', error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
