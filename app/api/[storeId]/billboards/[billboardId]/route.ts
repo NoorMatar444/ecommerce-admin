@@ -11,6 +11,7 @@ export async function GET(
   { params }: { params: { storeId: string, billboardId: string } }
 ) {
   try {
+    const url = new URL(req.url);
     if (!params.billboardId) {
       return new NextResponse("Billboard id is required", { status: 400 });
     }
